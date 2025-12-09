@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>贷款提取还款计算器</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-soft: #e8edff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --bg: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px 12px 24px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 15% 20%, #eef2ff, transparent 35%),
+        radial-gradient(circle at 85% 10%, #e0f2fe, transparent 30%),
+        radial-gradient(circle at 80% 80%, #ecfeff, transparent 35%),
+        var(--bg);
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+
+    .lead {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .row {
+      margin-bottom: 12px;
+    }
+
+    .flex {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    label {
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    input,
+    select,
+    button {
+      padding: 6px 8px;
+      margin: 2px 0;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid var(--primary-soft);
+      border-color: var(--primary);
+    }
+
+    .radio-group {
+      display: inline-flex;
+      gap: 10px;
+    }
+
+    .chip {
+      background: var(--primary-soft);
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin: 0;
+      border: 1px solid #dfe6ff;
+      color: #1e3a8a;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+    }
+
+    .chips {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-text {
+      background: transparent;
+      color: var(--primary);
+      border: none;
+      padding: 3px 5px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 12px;
+      font-size: 11px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--border);
+      padding: 5px 7px;
+      text-align: right;
+    }
+
+    th {
+      background: #f9fafb;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .note {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: left;
+    }
+
+    .section-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 12px 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #f8fafc;
+    }
+
+    .summary-title {
+      color: var(--muted);
+      font-size: 10px;
+      margin: 0 0 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .summary-value {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .current-row {
+      background:#C1FFC1
+    }
+
+    /* 图表样式 */
+    .chart-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .chart-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .prediction-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .prediction-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .prediction-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .prediction-item, .metric-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .prediction-item:last-child, .metric-item:last-child {
+      border-bottom: none;
+    }
+
+    .prediction-label, .metric-label {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .prediction-value, .metric-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .tip-item {
+      font-size: 10px;
+      color: var(--muted);
+      padding: 3px 0;
+      line-height: 1.3;
+    }
+
+    .tip-item:before {
+      content: "• ";
+      color: var(--primary);
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h2>贷款利率变更计算分析器</h2>
+    <p class="lead">专门分析利率变更时的不同计算方式，帮你找出银行实际采用的计算逻辑。</p>
+
+
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+      <label style="font-size: 13px; font-weight: 500;">贷款金额(元)<br><input type="number" id="principal" value="720000" style="width: 100%; padding: 8px; font-size: 14px; font-weight: 600;" /></label>
+      <label style="font-size: 13px; font-weight: 500;">年利率(%)<br><input type="number" id="annualRate" step="0.01" value="3.1" style="width: 100%; padding: 8px; font-size: 14px; font-weight: 600;" /></label>
+      <label style="font-size: 13px; font-weight: 500;">总期数(月)<br><input type="number" id="months" value="360" style="width: 100%; padding: 8px; font-size: 14px; font-weight: 600;" /></label>
+      <label style="font-size: 13px; font-weight: 500;">首次还款日期<br><input type="date" id="firstPayDate" value="2022-12-26" style="width: 100%; padding: 8px; font-size: 14px; font-weight: 600;" /></label>
+      <label style="font-size: 13px; font-weight: 500;">还款方式<br>
+        <select id="repayType" style="width:100%; padding: 8px; font-size: 14px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border);">
+          <!-- <option value="annuity" selected>等额本息</option> -->
+          <option value="equalPrincipal">等额本金</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 两列布局 -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+      
+      <!-- 左列：利率变更 -->
+      <div style="border: 1px solid var(--border); border-radius: 6px; padding: 8px; background: #fafbfc;">
+        <div class="section-title" style="font-size: 11px; margin-bottom: 4px;">利率变更（可多条）</div>
+        <div class="flex" style="gap: 6px;">
+          <label style="font-size: 11px;">利率 <input type="number" id="rateChangeValue" step="0.01" value="2.85" style="width:60px; padding: 4px 6px; font-size: 11px;" /> %</label>
+          <label style="font-size: 11px;">变更生效日 <input type="date" id="rateChangeDate" value="2023-12-08" style="width:120px; padding: 4px 6px; font-size: 11px;" /></label>
+          <button class="btn-primary" onclick="addRateChange()" style="padding: 4px 8px; font-size: 11px;">添加</button>
+        </div>
+        <div id="rateChanges" class="chips" style="margin-top: 6px;"></div>
+      </div>
+
+      <!-- 右列：提前还款 -->
+      <div style="border: 1px solid var(--border); border-radius: 6px; padding: 8px; background: #fafbfc;">
+        <div class="section-title" style="font-size: 11px; margin-bottom: 4px;">提前还款（可多条）</div>
+        <div class="flex" style="gap: 6px;">
+          <label style="font-size: 11px;">额外还 <input type="number" id="prepayAmount" value="50000" style="width:80px; padding: 4px 6px; font-size: 11px;" /> 元</label>
+          <label style="font-size: 11px;">提前还款日 <input type="date" id="prepayDate" style="width:120px; padding: 4px 6px; font-size: 11px;" /></label>
+          <select id="prepayMode" style="width:140px;" hidden="true">
+            <option value="reducePayment">保持期数，降低月供</option>
+          </select>
+          <button class="btn-primary" onclick="addPrepay()" style="padding: 4px 8px; font-size: 11px;">添加</button>
+        </div>
+        <div id="prepays" class="chips" style="margin-top: 6px;"></div>
+      </div>
+      
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="calc()">计算</button>
+
+    <!-- 图表分析区域 -->
+    <div id="chartsContainer" style="display: none; margin-top: 16px;">
+      <div class="section-title" style="margin-bottom: 10px;">📊 数据分析与预测</div>
+      
+      <!-- 图表网格布局 -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 12px;">
+        
+        <!-- 还款趋势图 -->
+        <div class="chart-card">
+          <h4>💰 还款趋势分析</h4>
+          <canvas id="paymentTrendChart" width="400" height="200"></canvas>
+        </div>
+        
+        <!-- 提前还款效果 -->
+        <div class="chart-card">
+          <h4>⚡ 提前还款效果</h4>
+          <canvas id="prepayEffectChart" width="400" height="200"></canvas>
+        </div>
+        
+        <!-- 年度汇总分析 -->
+        <div class="chart-card">
+          <h4>📅 年度支出分析</h4>
+          <canvas id="yearlyAnalysisChart" width="400" height="200"></canvas>
+        </div>
+        
+      </div>
+      
+      <!-- 预测分析卡片 -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 12px;">
+        
+        <div class="prediction-card">
+          <div class="prediction-title">🔮 智能预测</div>
+          <div id="smartPrediction" class="prediction-content">
+            <div class="prediction-item">
+              <span class="prediction-label">预计完成时间:</span>
+              <span class="prediction-value" id="predictedEndDate">-</span>
+            </div>
+            <div class="prediction-item">
+              <span class="prediction-label">剩余总利息:</span>
+              <span class="prediction-value" id="remainingInterest">-</span>
+            </div>
+            <div class="prediction-item">
+              <span class="prediction-label">月均还款:</span>
+              <span class="prediction-value" id="avgMonthlyPayment">-</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="prediction-card">
+          <div class="prediction-title">💡 优化建议</div>
+          <div id="optimizationTips" class="prediction-content">
+            <div class="tip-item" id="tip1">分析中...</div>
+            <div class="tip-item" id="tip2"></div>
+            <div class="tip-item" id="tip3"></div>
+          </div>
+        </div>
+        
+        <div class="prediction-card">
+          <div class="prediction-title">📊 关键指标</div>
+          <div id="keyMetrics" class="prediction-content">
+            <div class="metric-item">
+              <span class="metric-label">利息占比:</span>
+              <span class="metric-value" id="interestRatio">-</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">已还进度:</span>
+              <span class="metric-value" id="paymentProgress">-</span>
+            </div>
+            <div class="metric-item">
+              <span class="metric-label">节省利息:</span>
+              <span class="metric-value" id="savedInterest">-</span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'loan_calc_state';
+    const rateChanges = [];
+    const prepays = [];
+
+    function saveState() {
+      const state = {
+        principal: document.getElementById('principal').value,
+        annualRate: document.getElementById('annualRate').value,
+        months: document.getElementById('months').value,
+        repayType: document.getElementById('repayType')?.value || 'annuity',
+        prepayMode: document.getElementById('prepayMode')?.value || 'reducePayment',
+        rateChanges,
+        prepays,
+        rateChangeForm: {
+          rate: document.getElementById('rateChangeValue').value,
+          date: document.getElementById('rateChangeDate').value
+        },
+        prepayForm: {
+          amount: document.getElementById('prepayAmount').value,
+          date: document.getElementById('prepayDate').value
+        },
+        firstPayDate: document.getElementById('firstPayDate').value
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        if (s.principal) document.getElementById('principal').value = s.principal;
+        if (s.annualRate) document.getElementById('annualRate').value = s.annualRate;
+        if (s.months) document.getElementById('months').value = s.months;
+        if (s.repayType) {
+          const select = document.getElementById('repayType');
+          if (select) select.value = s.repayType;
+        }
+        if (s.prepayMode) {
+          const select = document.getElementById('prepayMode');
+          // 历史数据若为“保持月供，缩短期数”，统一回退为“保持期数，降低月供”
+          const normalizedMode = s.prepayMode === 'reduceTerm' ? 'reducePayment' : s.prepayMode;
+          if (select) select.value = normalizedMode;
+        }
+        if (Array.isArray(s.rateChanges)) {
+          rateChanges.splice(0, rateChanges.length, ...s.rateChanges);
+        }
+        if (Array.isArray(s.prepays)) {
+          prepays.splice(0, prepays.length, ...s.prepays);
+        }
+        if (s.rateChangeForm) {
+          if (s.rateChangeForm.rate) document.getElementById('rateChangeValue').value = s.rateChangeForm.rate;
+          if (s.rateChangeForm.date) document.getElementById('rateChangeDate').value = s.rateChangeForm.date;
+        }
+        if (s.prepayForm) {
+          if (s.prepayForm.amount) document.getElementById('prepayAmount').value = s.prepayForm.amount;
+          if (s.prepayForm.date) document.getElementById('prepayDate').value = s.prepayForm.date;
+        }
+        if (s.firstPayDate) {
+          document.getElementById('firstPayDate').value = s.firstPayDate;
+        }
+        renderChips();
+      } catch (err) {
+        console.warn('加载本地记录失败', err);
+      }
+    }
+
+    function renderChips() {
+      const rcDiv = document.getElementById('rateChanges');
+      rcDiv.innerHTML = rateChanges.map((r, i) =>
+        `<div class="chip">第${r.period + 1}期生效 (${r.date || '未填日期'}): 年利率→${r.rate}% <button onclick="delRate(${i})" style="padding: 2px 5px; font-size: 10px;">删除</button></div>`
+      ).join('');
+      const ppDiv = document.getElementById('prepays');
+      ppDiv.innerHTML = prepays.map((p, i) =>
+        `<div class="chip">第${p.period}期前: 提前还款 ${p.amount.toLocaleString()} ${p.date ? `(${p.date})` : ''} <button onclick="delPrepay(${i})" style="padding: 2px 5px; font-size: 10px;">删除</button></div>`
+      ).join('');
+      saveState();
+    }
+
+    function addRateChange() {
+      const rate = +document.getElementById('rateChangeValue').value;
+      const date = document.getElementById('rateChangeDate').value;
+      const firstPayDate = document.getElementById('firstPayDate').value;
+      
+      if (!date) {
+        alert('请填写变更生效日期');
+        return;
+      }
+      
+      const dateObj = new Date(date);
+      if (Number.isNaN(dateObj.getTime())) {
+        alert('请填写有效的变更生效日期');
+        return;
+      }
+      
+      if (!firstPayDate) {
+        alert('请先填写首次还款日期，以便自动计算期数');
+        return;
+      }
+      
+      // 根据日期自动计算期数
+      const period = calcPeriodFromDate(firstPayDate, date);
+      if (!period) {
+        alert('无法计算期数，请检查日期格式');
+        return;
+      }
+      
+      if (rate >= 0) {
+        rateChanges.push({ period, rate, date });
+        rateChanges.sort((a, b) => {
+          const da = new Date(a.date).getTime();
+          const db = new Date(b.date).getTime();
+          return da === db ? a.period - b.period : da - db;
+        });
+        renderChips();
+        saveState();
+      }
+    }
+    function addPrepay() {
+      const amount = +document.getElementById('prepayAmount').value;
+      const date = document.getElementById('prepayDate').value;
+      const firstPayDate = document.getElementById('firstPayDate').value;
+
+      if (!date) {
+        alert('请填写提前还款日期');
+        return;
+      }
+
+      const dateObj = new Date(date);
+      if (Number.isNaN(dateObj.getTime())) {
+        alert('请填写有效的提前还款日期');
+        return;
+      }
+
+      if (!firstPayDate) {
+        alert('请先填写首次还款日期，以便自动计算期数');
+        return;
+      }
+
+      if (amount <= 0) {
+        alert('请填写有效的还款金额');
+        return;
+      }
+
+      // 根据日期自动计算期数
+      const calculatedPeriod = calcPeriodFromDate(firstPayDate, date);
+      if (!calculatedPeriod) {
+        alert('无法计算期数，请检查日期格式');
+        return;
+      }
+
+      // 提前还款的期数就是计算出的期数（在该期之前还款）
+      const period = calculatedPeriod;
+      const prepayData = { period, amount, date };
+      prepays.push(prepayData);
+      prepays.sort((a, b) => {
+        // 先按期数排序，如果期数相同则按日期排序
+        if (a.period !== b.period) return a.period - b.period;
+        const da = a.date ? new Date(a.date).getTime() : 0;
+        const db = b.date ? new Date(b.date).getTime() : 0;
+        return da - db;
+      });
+      renderChips();
+      saveState();
+    }
+    function delRate(i) { rateChanges.splice(i, 1); renderChips(); saveState(); }
+    function delPrepay(i) { prepays.splice(i, 1); renderChips(); saveState(); }
+
+    function monthlyPayment(principal, annualRate, months) {
+      const r = annualRate / 100 / 12;
+      if (r === 0) return principal / months;
+      return principal * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+    }
+
+    function annuityMonths(balance, annualRate, payment) {
+      if (payment <= 0) return Infinity;
+      const r = annualRate / 100 / 12;
+      if (r === 0) return balance / payment;
+      const ratio = 1 - (r * balance) / payment;
+      if (ratio <= 0) return 1;
+      return -Math.log(ratio) / Math.log(1 + r);
+    }
+
+    // 估算在“不知道未来变更”的视角下，后续应付的全部利息
+    // 假设：后续利率保持当前利率；不再发生新的提前还款或利率变更
+    function estimateRemainingInterest(balance, annualRate, remainingMonths, repayType) {
+      if (remainingMonths <= 0 || balance <= 0) return 0;
+      const r = annualRate / 100 / 12;
+      if (repayType === 'annuity') {
+        const pay = monthlyPayment(balance, annualRate, remainingMonths);
+        const total = pay * remainingMonths;
+        return Math.max(total - balance, 0);
+      }
+      // 等额本金：利息为递减等差数列
+      const principalPerMonth = balance / remainingMonths;
+      // 利息总和 = r * [remainingMonths * balance - principalPerMonth * remainingMonths * (remainingMonths - 1) / 2]
+      const interestSum = r * (remainingMonths * balance - principalPerMonth * remainingMonths * (remainingMonths - 1) / 2);
+      return Math.max(interestSum, 0);
+    }
+
+    function parseDate(value) {
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function buildRateTimeline(initialRate, firstPayDateStr, rateChangesList) {
+      const firstDate = parseDate(firstPayDateStr);
+      const startDate = addMonthsWithClamp(firstDate, -1); // 从首期前一月开始累计利息
+      const timeline = [{ date: startDate, rate: initialRate }];
+      rateChangesList.forEach(r => {
+        const d = parseDate(r.date);
+        if (d) timeline.push({ date: d, rate: r.rate });
+      });
+      timeline.sort((a, b) => a.date - b.date);
+      return timeline;
+    }
+
+    function rateAtDate(timeline, date) {
+      let current = timeline[0].rate;
+      for (const item of timeline) {
+        if (date >= item.date) current = item.rate;
+        else break;
+      }
+      return current;
+    }
+
+    // 判断一个计息区间内是否存在利率变动（不含端点）
+    function hasRateChangeBetween(timeline, startDate, endDate) {
+      for (const item of timeline) {
+        if (item.date > startDate && item.date < endDate) return true;
+        if (item.date >= endDate) break;
+      }
+      return false;
+    }
+
+    function interestByDays(balance, startDate, endDate, timeline) {
+      if (!(startDate && endDate)) return 0;
+
+      // 检查是否为利率变更月（该月内有利率变更）
+      const hasRateChangeInMonth = timeline.some(item => {
+        return item.date > startDate && item.date <= endDate;
+      });
+
+      if (hasRateChangeInMonth) {
+        // 利率变更月：按固定30天计算
+        return interestForRateChangeMonth(balance, startDate, endDate, timeline);
+      } else {
+        // 普通月：月利率计算
+        const rate = rateAtDate(timeline, startDate);
+        return balance * (rate / 100) / 12; // 月利率
+      }
+    }
+
+    function interestForRateChangeMonth(balance, startDate, endDate, timeline) {
+      // 利率变更月按固定30天计算
+      const sortedTimeline = [...timeline].sort((a, b) => a.date - b.date);
+
+      // 找到该月内的利率变更日
+      const rateChangeDate = sortedTimeline.find(item =>
+        item.date > startDate && item.date <= endDate
+      )?.date;
+
+      if (!rateChangeDate) {
+        // 没有利率变更，按普通月计算
+        const rate = rateAtDate(timeline, startDate);
+        return balance * (rate / 100) / 12;
+      }
+
+      // 计算从上一次还款日到利率生效日的天数
+      const ONE_DAY = 24 * 60 * 60 * 1000;
+      const oldRateDays = Math.round((rateChangeDate - startDate) / ONE_DAY) - 1;
+
+      // 新利率天数：固定30天 - 旧利率天数
+      const newRateDays = 30 - oldRateDays;
+
+      const oldRate = rateAtDate(timeline, startDate);
+      const newRate = rateAtDate(timeline, rateChangeDate);
+
+      // 月利率/30天计算方式
+      const oldInterest = balance * (oldRate / 100) / 12 * (oldRateDays / 30);
+      const newInterest = balance * (newRate / 100) / 12 * (newRateDays / 30);
+
+      return oldInterest + newInterest;
+    }
+
+    function periodRange(firstPayDate, periodIndex) {
+      const dueDate = addMonthsWithClamp(firstPayDate, periodIndex - 1);
+      const startDate = periodIndex === 1
+        ? addMonthsWithClamp(firstPayDate, -1)
+        : addMonthsWithClamp(firstPayDate, periodIndex - 2);
+      return { startDate, endDate: dueDate };
+    }
+
+    function buildSchedule(P0, annualRateInit, monthsInit, repayType, prepayMode, rateChangesList, prepaysList, firstPayDateStr) {
+      const firstPayDate = parseDate(firstPayDateStr);
+      if (!firstPayDate) return { schedule: [] };
+      const timeline = buildRateTimeline(annualRateInit, firstPayDateStr, rateChangesList);
+      let monthsTotal = monthsInit;
+      let balance = P0;
+      let schedule = [];
+      let currentMonth = 1;
+      let remainingMonths = monthsTotal;
+      let lockedPayment = null; // 用于“保持月供”模式的等额本息
+      let lockedPrincipalEP = null; // 用于“保持月供”模式的等额本金（保持每月本金部分）
+
+      // 将提前还款按期数分组，支持同一期多次提前还款
+      const prepayMap = new Map();
+      prepaysList.forEach(p => {
+        if (!prepayMap.has(p.period)) {
+          prepayMap.set(p.period, []);
+        }
+        prepayMap.get(p.period).push(p);
+      });
+
+      // 对每期内的提前还款按日期排序
+      prepayMap.forEach(prepays => {
+        prepays.sort((a, b) => {
+          if (!a.date && !b.date) return 0;
+          if (!a.date) return 1;
+          if (!b.date) return -1;
+          return new Date(a.date) - new Date(b.date);
+        });
+      });
+
+      while (balance > 0.01 && remainingMonths > 0 && currentMonth <= monthsTotal) {
+        const { startDate, endDate } = periodRange(firstPayDate, currentMonth);
+        const effectiveRate = rateAtDate(timeline, startDate);
+        let pay;
+        // 无利率变动时按月计息；发生变动时按天拆分
+        let interest;
+        if (hasRateChangeBetween(timeline, startDate, endDate)) {
+          interest = interestByDays(balance, startDate, endDate, timeline);
+        } else {
+          interest = balance * (effectiveRate / 100) / 12;
+        }
+        let principalPay;
+        // 用于备注展示的说明
+        let noteParts = [];
+
+        if (repayType === 'annuity') {
+          // 对于利率变更月，使用期末利率计算月供
+          const rateForPayment = hasRateChangeBetween(timeline, startDate, endDate)
+            ? rateAtDate(timeline, endDate)
+            : effectiveRate;
+          pay = lockedPayment ?? monthlyPayment(balance, rateForPayment, remainingMonths);
+          principalPay = pay - interest;
+        } else {
+          const principalBase = lockedPrincipalEP ?? (balance / remainingMonths);
+          principalPay = principalBase;
+          pay = principalPay + interest;
+        }
+        // 本期结束后剩余期数（用于估算后续利息）
+        const remainingAfterThis = Math.max(remainingMonths - 1, 0);
+
+        // 先处理正常还款
+        balance -= principalPay;
+        if (balance < 0) {
+          principalPay += balance;
+          balance = 0;
+        }
+        remainingMonths = remainingAfterThis;
+
+        const rateChangedThisPeriod = rateChangesList
+          .some(r => {
+            const d = parseDate(r.date);
+            return d && d > startDate && d <= endDate;
+          });
+        const rateBeforeChange = rateAtDate(timeline, startDate);
+        const rateAfterChange = rateAtDate(timeline, endDate);
+
+        if (rateChangedThisPeriod) {
+          const baseRemainingInterest = estimateRemainingInterest(balance, rateBeforeChange, remainingAfterThis, repayType);
+          const newRemainingInterest = estimateRemainingInterest(balance, rateAfterChange, remainingAfterThis, repayType);
+          const saved = baseRemainingInterest - newRemainingInterest;
+          noteParts.push(`利率变更${rateAfterChange}%`);
+          if (Number.isFinite(saved)) {
+            noteParts.push(`节省利息≈${saved.toFixed(2)}`);
+          }
+        }
+
+        schedule.push({
+          period: currentMonth,
+          payment: pay,
+          principal: principalPay,
+          interest,
+          prepay: 0,
+          rate: rateAtDate(timeline, endDate),
+          balance: balance,
+          rateChanged: rateChangedThisPeriod,
+          note: noteParts.join('; ')
+        });
+
+        // 检查下一期是否有提前还款（在下一期还款日之前）
+        const nextMonth = currentMonth + 1;
+        if (prepayMap.has(nextMonth)) {
+          const prepayList = prepayMap.get(nextMonth);
+          const lastNormalPayDate = endDate; // 上次正常还款日期（始终不变）
+
+          // 处理该期内的所有提前还款
+          prepayList.forEach((prepayInfo, index) => {
+            const extra = prepayInfo.amount;
+
+            // 计算提前还款利息
+            let daysSinceLastPay = 15; // 默认15天（假设在月中提前还款）
+            let prepayDate = null;
+            let prepayRate = effectiveRate; // 默认使用当期利率
+
+            if (prepayInfo.date) {
+              // 始终从上次正常还款日计算到提前还款日的天数
+              prepayDate = parseDate(prepayInfo.date);
+              const ONE_DAY = 24 * 60 * 60 * 1000;
+
+              if (prepayDate && lastNormalPayDate) {
+                daysSinceLastPay = Math.round((prepayDate - lastNormalPayDate) / ONE_DAY);
+                // 包含当天，超过30天按30天算，等于大于当前月的天数也算30天
+                daysSinceLastPay = Math.max(1, Math.min(daysSinceLastPay, 30));
+
+                // 如果当前月天数不足30天，也按30天算
+                const currentMonthDays = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate();
+                if (daysSinceLastPay >= currentMonthDays) {
+                  daysSinceLastPay = 30;
+                }
+                // 获取提前还款日期当时的利率
+                prepayRate = rateAtDate(timeline, prepayDate);
+              }
+            } else {
+              // 如果没有指定日期，假设每次提前还款都是从上次正常还款日开始计算
+              // 可以根据序号设置不同的默认天数
+              daysSinceLastPay = 15 + (index * 5); // 第一次15天，第二次20天，第三次25天等
+            }
+
+            // 提前还款利息 = 还款金额 * 提前还款日当时的利率 / 12 * 天数 / 30
+            const prepayInterest = extra * (prepayRate / 100) / 12 * daysSinceLastPay / 30;
+
+            const beforeBalance = balance;
+            balance -= extra;
+            if (balance < 0) balance = 0;
+            const baseRemainingInterest = estimateRemainingInterest(beforeBalance, prepayRate, remainingMonths, repayType);
+            const newRemainingInterest = estimateRemainingInterest(balance, prepayRate, remainingMonths, repayType);
+            const savedInterest = baseRemainingInterest - newRemainingInterest;
+
+            // 只在最后一次提前还款时重新计算期数
+            if (index === prepayList.length - 1) {
+              // 统一为“保持期数，降低月供”模式，移除缩短期数逻辑
+              lockedPayment = null;
+              lockedPrincipalEP = null;
+            }
+
+            // 添加提前还款行（在第nextMonth期之前）
+            const prepaySequence = prepayList.length > 1 ? `-${index + 1}` : '';
+            schedule.push({
+              period: `${nextMonth}P${prepaySequence}`, // 用P标识提前还款，多次还款用序号区分
+              payment: extra + prepayInterest,
+              principal: extra,
+              interest: prepayInterest,
+              prepay: extra,
+              rate: prepayRate, // 使用提前还款日当时的利率
+              balance: balance,
+              prepayDate: prepayInfo.date, // 保存提前还款日期
+              note: [
+                `提前还款${extra.toLocaleString()}`,
+                Number.isFinite(savedInterest) ? `节省利息≈${savedInterest.toFixed(2)}` : ''
+              ].filter(Boolean).join('; ')
+            });
+          });
+        }
+
+
+        currentMonth++;
+      }
+
+      return { schedule };
+    }
+
+    function calc() {
+      const P0 = +document.getElementById('principal').value;
+      const annualRateInput = +document.getElementById('annualRate').value;
+      const monthsInput = +document.getElementById('months').value;
+      const repayType = document.getElementById('repayType').value;
+      const prepayMode = document.getElementById('prepayMode')?.value || 'reducePayment';
+      const firstPayDate = document.getElementById('firstPayDate').value;
+      if (!firstPayDate) {
+        alert('请先填写首次还款日期，以便按日计算利息');
+        return;
+      }
+      saveState();
+
+      // 区分已到期和未来的提前还款
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const effectivePrepays = prepays.filter(p => {
+        if (!p.date) return true;
+        const d = parseDate(p.date);
+        if (!d) return true;
+        return d <= today;
+      });
+      const futurePrepays = prepays.filter(p => {
+        if (!p.date) return false;
+        const d = parseDate(p.date);
+        if (!d) return false;
+        return d > today;
+      });
+
+      // 计算实际还款计划（只包含已到期的提前还款）
+      const activeSchedule = buildSchedule(P0, annualRateInput, monthsInput, repayType, prepayMode, rateChanges, effectivePrepays, firstPayDate);
+
+      // 计算包含未来提前还款的完整计划（用于表格展示）
+      const fullSchedule = buildSchedule(P0, annualRateInput, monthsInput, repayType, prepayMode, rateChanges, prepays, firstPayDate);
+
+      // 直接使用实际还款列表中的支付值，避免重复计入提前还款本金
+      const totalPayment = activeSchedule.schedule.reduce((sum, s) => sum + s.payment, 0);
+      const totalInterest = activeSchedule.schedule.reduce((sum, s) => sum + s.interest, 0);
+      
+      renderResult(fullSchedule.schedule, {
+        principal: P0,
+        totalPayment,
+        totalInterest,
+        firstPayDate,
+        months: monthsInput,
+        repayType,
+        annualRate: annualRateInput
+      }, futurePrepays);
+    }
+
+    function addMonthsWithClamp(date, months) {
+      const d = new Date(date.getTime());
+      const targetMonth = d.getMonth() + months;
+      const day = d.getDate();
+      d.setDate(1);
+      d.setMonth(targetMonth);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      d.setDate(Math.min(day, lastDay));
+      return d;
+    }
+
+    function calcPeriodFromDate(firstPayDateStr, targetDateStr) {
+      
+      if (!firstPayDateStr || !targetDateStr) return null;
+      const start = new Date(firstPayDateStr);
+      const target = new Date(targetDateStr);
+      if (isNaN(start.getTime()) || isNaN(target.getTime())) return null;
+      if (target < start) return 1; // 如果变更日期在首次还款日之前，默认为第1期
+      
+      // 计算月份差
+      const monthsDiff = (target.getFullYear() - start.getFullYear()) * 12 + (target.getMonth() - start.getMonth());
+      let period = monthsDiff + 1;
+      
+      // 计算该期对应的还款日
+      const periodPayDate = new Date(start.getFullYear(), start.getMonth() + monthsDiff, start.getDate());
+      
+      // 如果目标日期在该期还款日之前，算作该期；否则算作下一期
+      period = monthsDiff + 1;
+      if (period < 1) period = 1;
+      return period;
+    }
+
+    function calcCurrentPeriod(firstPayDateStr, totalPeriods) {
+      if (!firstPayDateStr) return null;
+      const start = new Date(firstPayDateStr);
+      if (isNaN(start)) return null;
+      const today = new Date();
+      if (today < start) return 0;
+      const monthsDiff = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+      let period = monthsDiff + 1;
+      if (today.getDate() < start.getDate()) period -= 1;
+      if (period < 0) period = 0;
+      if (totalPeriods !== undefined) period = Math.min(period, totalPeriods);
+      return period;
+    }
+
+    function renderResult(schedule, summary, futurePrepays = []) {
+      const container = document.getElementById('result');
+      if (!schedule.length) {
+        container.innerHTML = '<p>无结果</p>';
+        return;
+      }
+      const fmt = (v) => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const principalPaid = schedule.reduce((sum, s) => sum + s.principal + (s.prepay || 0), 0);
+      const interestPaid = schedule.reduce((sum, s) => sum + s.interest, 0);
+      const startDate = summary.firstPayDate ? new Date(summary.firstPayDate) : null;
+      const currentPeriod = calcCurrentPeriod(summary.firstPayDate, schedule.length);
+      
+      // 判断某个日期是否为未来
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isFutureDate = (dateStr) => {
+        if (!dateStr) return false;
+        const d = parseDate(dateStr);
+        return d && d > today;
+      };
+      
+      const remainingBalance = (() => {
+        if (currentPeriod === null) return summary.principal;
+        if (currentPeriod <= 0) return summary.principal;
+        // 优先用列表中当前期对应的余额，避免预付款行导致索引错位
+        const matched = schedule.find(s => typeof s.period === 'number' && s.period === currentPeriod);
+        if (matched) return Math.max(matched.balance, 0);
+        const idx = Math.min(currentPeriod - 1, schedule.length - 1);
+        return Math.max(schedule[idx].balance, 0);
+      })();
+      const paidThroughCurrent = (() => {
+        if (currentPeriod === null) return 0;
+        if (currentPeriod <= 0) return 0;
+        // 仅统计已到期的完整期次，当前期未到还款日不计入
+        const upto = Math.max(Math.min(currentPeriod - 1, schedule.length), 0);
+        return schedule.slice(0, upto).reduce((sum, s) => sum + s.payment, 0);
+      })();
+      const interestThroughCurrent = (() => {
+        if (currentPeriod === null) return 0;
+        if (currentPeriod <= 0) return 0;
+        const upto = Math.max(Math.min(currentPeriod - 1, schedule.length), 0);
+        return schedule.slice(0, upto).reduce((sum, s) => sum + s.interest, 0);
+      })();
+      const remainingInterest = (() => {
+        if (currentPeriod === null) return summary.totalInterest;
+        if (currentPeriod <= 0) return summary.totalInterest;
+        // 与剩余本金同理，优先用列表中当前期的行做切分，避免提前还款行错位
+        const matchedIndex = schedule.findIndex(s => typeof s.period === 'number' && s.period === currentPeriod);
+        const startIdx = matchedIndex >= 0
+          ? matchedIndex
+          : Math.max(Math.min(currentPeriod - 1, schedule.length - 1), 0);
+        return Math.max(schedule.slice(startIdx).reduce((sum, s) => sum + s.interest, 0), 0);
+      })();
+      // 剩余金额 = 剩余本金 + 剩余利息，保持与两项之和一致
+      const remainingPayment = Math.max(remainingBalance + remainingInterest, 0);
+
+      let accumulatedInterest = 0;
+      const rows = schedule.map((s, index) => {
+        // 处理提前还款行的期数显示
+        const isPrepayRow = typeof s.period === 'string' && s.period.includes('P');
+        let periodDisplay = s.period;
+        let dueDate = null;
+        let dueDateStr = '-';
+        
+        // 判断是否为未来的提前还款
+        const isFuturePrepay = isPrepayRow && s.prepayDate && isFutureDate(s.prepayDate);
+
+        if (isPrepayRow) {
+          // 提前还款行显示为 "第X期内提前还款" 或 "第X期内提前还款-N"
+          const periodParts = s.period.split('P');
+          const basePeriod = parseInt(periodParts[0]);
+          const sequence = periodParts[1] || '';
+          periodDisplay = basePeriod;
+          // 使用实际的提前还款日期，如果没有则显示默认文本
+          if (s.prepayDate) {
+            dueDateStr = s.prepayDate;
+          } else {
+            dueDateStr = '提前还款日';
+          }
+        } else {
+          // 正常还款行
+          dueDate = startDate ? addMonthsWithClamp(startDate, s.period - 1) : null;
+          dueDateStr = dueDate ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}` : '-';
+        }
+
+        // 累计已还利息（包括当前行）
+        accumulatedInterest += s.interest;
+        
+        // 剩余利息：基于当前行的剩余本金和利率，估算未来需要支付的利息
+        // 不使用后续实际利息累加，因为那样会让未来的提前还款影响当前行的显示
+        // 使用estimateRemainingInterest函数，基于当前状态估算
+        const currentBalance = s.balance;
+        const currentRate = s.rate;
+        
+        // 计算剩余期数：找到当前行之后还有多少个正常还款期
+        const remainingNormalPeriods = schedule.slice(index + 1).filter(item => typeof item.period === 'number').length;
+        
+        const remainingInterestForRow = estimateRemainingInterest(
+          currentBalance, 
+          currentRate, 
+          remainingNormalPeriods, 
+          summary.repayType
+        );
+
+        const highlight = currentPeriod && s.period === currentPeriod ? ' class="current-row"' : '';
+        const styles = [];
+        if (isPrepayRow) styles.push('background-color: #fff7ed;');
+        if (s.rateChanged) styles.push('background-color: #fff7ed;');
+        if (isFuturePrepay) styles.push('background-color: #e0f2fe; opacity: 0.8;'); // 未来提前还款用蓝色背景
+        const styleAttr = styles.length ? ` style="${styles.join(' ')}"` : '';
+        
+        // 未来提前还款的备注添加标识
+        const noteText = isFuturePrepay ? `【计划】${s.note || ''}` : (s.note || '');
+
+        return `
+        <tr${highlight}${styleAttr}>
+          <td>${periodDisplay}</td>
+          <td>${dueDateStr}</td>
+          <td>${s.rate.toFixed(3)}%</td>
+          <td>${s.payment.toFixed(2)}</td>
+          <td>${s.principal.toFixed(2)}</td>
+          <td>${s.interest.toFixed(2)}</td>
+          <td>${s.balance.toFixed(2)}</td>
+          <td>${remainingInterestForRow.toFixed(2)}</td>
+          <td class="note">${noteText}</td>
+        </tr>`;
+      }).join('');
+
+      const currentText = (() => {
+        if (currentPeriod === null) return '未填写首次还款日';
+        if (currentPeriod === 0) return '未到首次还款日';
+        return `当前日期对应第 ${currentPeriod} 期`;
+      })();
+
+      container.innerHTML = `
+        <div class="summary-grid">
+          <div class="summary-card">
+            <p class="summary-title">剩余金额/总金额</p>
+            <p class="summary-value">${fmt(remainingPayment)} / ${fmt(summary.totalPayment)}</p>
+          </div>
+          <div class="summary-card">
+            <p class="summary-title">剩余本金/总本金</p>
+            <p class="summary-value">${fmt(remainingBalance)} / ${fmt(summary.principal)}</p>
+          </div>
+       
+          <div class="summary-card">
+            <p class="summary-title">剩余利息/总利息</p>
+            <p class="summary-value">${fmt(remainingInterest)} / ${fmt(summary.totalInterest)}</p>
+          </div>
+          <div class="summary-card">
+            <p class="summary-title">当前期数（按日）</p>
+            <p class="summary-value">${currentText}</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>期数</th><th>应还日期</th><th>年利率</th><th>当期月供</th><th>本金</th><th>利息</th><th>剩余本金</th><th>剩余利息</th><th>备注</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+
+      // 显示图表容器并渲染图表（包含未来计划的提前还款）
+      document.getElementById('chartsContainer').style.display = 'block';
+      renderCharts(schedule, summary, currentPeriod, remainingBalance, remainingInterest);
+    }
+
+    function bindAutoSave() {
+      ['principal', 'annualRate', 'months', 'rateChangeValue', 'rateChangeDate', 'prepayAmount', 'prepayDate', 'firstPayDate']
+        .forEach(id => {
+          const el = document.getElementById(id);
+          el.addEventListener('input', saveState);
+        });
+      document.getElementById('repayType')?.addEventListener('change', saveState);
+      document.getElementById('prepayMode')?.addEventListener('change', saveState);
+    }
+
+    // 图表实例存储
+    let chartInstances = {};
+
+    // 销毁现有图表
+    function destroyExistingCharts() {
+      Object.values(chartInstances).forEach(chart => {
+        if (chart) chart.destroy();
+      });
+      chartInstances = {};
+    }
+
+    // 渲染所有图表
+    function renderCharts(schedule, summary, currentPeriod, remainingBalance, remainingInterest) {
+      destroyExistingCharts();
+      
+      // 过滤掉提前还款行，只保留正常还款期数
+      const normalSchedule = schedule.filter(s => typeof s.period === 'number');
+      
+      renderPaymentTrendChart(normalSchedule);
+      renderPrepayEffectChart(schedule);
+      renderYearlyAnalysisChart(normalSchedule, summary);
+      updatePredictionCards(schedule, summary, currentPeriod, remainingBalance, remainingInterest);
+    }
+
+    // 1. 还款趋势图
+    function renderPaymentTrendChart(schedule) {
+      const ctx = document.getElementById('paymentTrendChart').getContext('2d');
+      const labels = schedule.map(s => `第${s.period}期`);
+      const payments = schedule.map(s => s.payment);
+      const principals = schedule.map(s => s.principal);
+      const interests = schedule.map(s => s.interest);
+
+      chartInstances.paymentTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels.slice(0, Math.min(60, labels.length)), // 只显示前60期
+          datasets: [{
+            label: '月供总额',
+            data: payments.slice(0, Math.min(60, payments.length)),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            tension: 0.1
+          }, {
+            label: '本金部分',
+            data: principals.slice(0, Math.min(60, principals.length)),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.1)',
+            tension: 0.1
+          }, {
+            label: '利息部分',
+            data: interests.slice(0, Math.min(60, interests.length)),
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 提前还款效果
+    function renderPrepayEffectChart(schedule) {
+      const ctx = document.getElementById('prepayEffectChart').getContext('2d');
+      
+      // 提取提前还款数据
+      const prepayData = schedule.filter(s => typeof s.period === 'string' && s.period.includes('P'));
+      
+      if (prepayData.length === 0) {
+        // 如果没有提前还款，显示提示
+        chartInstances.prepayEffect = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['暂无提前还款'],
+            datasets: [{
+              label: '提前还款金额',
+              data: [0],
+              backgroundColor: '#e5e7eb'
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+        return;
+      }
+
+      const labels = prepayData.map((s, i) => `第${i + 1}次`);
+      const amounts = prepayData.map(s => s.prepay || 0);
+      const savings = prepayData.map(s => {
+        if (s.note && s.note.includes('节省利息')) {
+          const match = s.note.match(/节省利息≈([\d.]+)/);
+          return match ? parseFloat(match[1]) : 0;
+        }
+        return 0;
+      });
+
+      chartInstances.prepayEffect = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: '提前还款金额',
+            data: amounts,
+            backgroundColor: '#3b82f6',
+            yAxisID: 'y'
+          }, {
+            label: '节省利息',
+            data: savings,
+            backgroundColor: '#10b981',
+            yAxisID: 'y1'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              position: 'left',
+              title: { display: true, text: '还款金额 (元)' },
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              title: { display: true, text: '节省利息 (元)' },
+              grid: { drawOnChartArea: false },
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // 年度汇总分析
+    function renderYearlyAnalysisChart(schedule, summary) {
+      const ctx = document.getElementById('yearlyAnalysisChart').getContext('2d');
+      
+      // 按年份汇总数据
+      const startDate = new Date(summary.firstPayDate);
+      const yearlyData = {};
+      
+      schedule.forEach(s => {
+        const periodDate = addMonthsWithClamp(startDate, s.period - 1);
+        const year = periodDate.getFullYear();
+        
+        if (!yearlyData[year]) {
+          yearlyData[year] = { payment: 0, principal: 0, interest: 0 };
+        }
+        
+        yearlyData[year].payment += s.payment;
+        yearlyData[year].principal += s.principal;
+        yearlyData[year].interest += s.interest;
+      });
+
+      const years = Object.keys(yearlyData).sort();
+      const payments = years.map(year => yearlyData[year].payment);
+      const principals = years.map(year => yearlyData[year].principal);
+      const interests = years.map(year => yearlyData[year].interest);
+
+      chartInstances.yearlyAnalysis = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: years,
+          datasets: [{
+            label: '年度本金',
+            data: principals,
+            backgroundColor: '#059669',
+            stack: 'Stack 0'
+          }, {
+            label: '年度利息',
+            data: interests,
+            backgroundColor: '#dc2626',
+            stack: 'Stack 0'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              stacked: true,
+              ticks: {
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              }
+            },
+            x: {
+              stacked: true
+            }
+          }
+        }
+      });
+    }
+
+    // 更新预测卡片
+    function updatePredictionCards(schedule, summary, currentPeriod, remainingBalance, remainingInterest) {
+      const normalSchedule = schedule.filter(s => typeof s.period === 'number');
+      const lastPeriod = normalSchedule[normalSchedule.length - 1];
+      
+      // 预计完成时间
+      if (lastPeriod) {
+        const startDate = new Date(summary.firstPayDate);
+        const endDate = addMonthsWithClamp(startDate, lastPeriod.period - 1);
+        document.getElementById('predictedEndDate').textContent = 
+          `${endDate.getFullYear()}年${endDate.getMonth() + 1}月`;
+      }
+      
+      // 剩余总利息
+      document.getElementById('remainingInterest').textContent = 
+        `¥${remainingInterest.toLocaleString()}`;
+      
+      // 月均还款
+      const avgPayment = normalSchedule.reduce((sum, s) => sum + s.payment, 0) / normalSchedule.length;
+      document.getElementById('avgMonthlyPayment').textContent = 
+        `¥${avgPayment.toLocaleString()}`;
+      
+      // 关键指标
+      const totalPayment = summary.totalPayment;
+      const interestRatio = ((summary.totalInterest / totalPayment) * 100).toFixed(1);
+      document.getElementById('interestRatio').textContent = `${interestRatio}%`;
+      
+      const progress = currentPeriod ? ((currentPeriod / normalSchedule.length) * 100).toFixed(1) : '0';
+      document.getElementById('paymentProgress').textContent = `${progress}%`;
+      
+      // 计算总节省利息
+      const totalSaved = schedule.reduce((sum, s) => {
+        if (s.note && s.note.includes('节省利息')) {
+          const match = s.note.match(/节省利息≈([\d.]+)/);
+          return sum + (match ? parseFloat(match[1]) : 0);
+        }
+        return sum;
+      }, 0);
+      document.getElementById('savedInterest').textContent = `¥${totalSaved.toLocaleString()}`;
+      
+      // 优化建议
+      updateOptimizationTips(schedule, summary, remainingBalance, remainingInterest);
+    }
+
+    // 更新优化建议
+    function updateOptimizationTips(schedule, summary, remainingBalance, remainingInterest) {
+      const tips = [];
+      
+      // 分析当前利率
+      const currentRate = schedule[schedule.length - 1]?.rate || summary.annualRate;
+      if (currentRate > 4.0) {
+        tips.push('当前利率较高，建议关注利率调整政策');
+      } else if (currentRate < 3.5) {
+        tips.push('当前利率较低，是还款的好时机');
+      }
+      
+      // 分析提前还款效果
+      const prepayCount = schedule.filter(s => typeof s.period === 'string').length;
+      if (prepayCount === 0) {
+        tips.push('考虑适当提前还款以减少利息支出');
+      } else {
+        tips.push('提前还款策略执行良好，继续保持');
+      }
+      
+      // 分析还款进度
+      const normalSchedule = schedule.filter(s => typeof s.period === 'number');
+      const totalInterest = normalSchedule.reduce((sum, s) => sum + s.interest, 0);
+      const interestRatio = (totalInterest / summary.totalPayment) * 100;
+      
+      if (interestRatio > 30) {
+        tips.push('利息占比较高，建议增加提前还款频率');
+      } else if (interestRatio < 20) {
+        tips.push('利息控制良好，可考虑其他投资机会');
+      }
+      
+      // 更新UI
+      document.getElementById('tip1').textContent = tips[0] || '暂无建议';
+      document.getElementById('tip2').textContent = tips[1] || '';
+      document.getElementById('tip3').textContent = tips[2] || '';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      bindAutoSave();
+      loadState();
+    });
+  </script>
+</body>
+
+</html>
