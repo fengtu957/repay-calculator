@@ -1,0 +1,45 @@
+{
+    "principal": "720000",
+    "annualRate": "3.1",
+    "months": "360",
+    "repayType": "equalPrincipal",
+    "prepayMode": "reducePayment",
+    "rateChanges": [
+        {
+            "period": 25,
+            "rate": 2.85,
+            "date": "2025-01-01"
+        },
+        {
+            "period": 37,
+            "rate": 2.6,
+            "date": "2026-01-01"
+        }
+    ],
+    "prepays": [
+        {
+            "period": 26,
+            "amount": 100000,
+            "date": "2025-02-07"
+        },
+        {
+            "period": 30,
+            "amount": 48000,
+            "date": "2025-06-25"
+        },
+        {
+            "period": 30,
+            "amount": 48000,
+            "date": "2025-06-25"
+        }
+    ],
+    "rateChangeForm": {
+        "rate": "2.85",
+        "date": "2025-01-01"
+    },
+    "prepayForm": {
+        "amount": "100000",
+        "date": "2027-03-10"
+    },
+    "firstPayDate": "2023-01-26"
+}

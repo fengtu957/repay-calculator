@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>贷款提取还款计算器</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     :root {
       --primary: #2563eb;
@@ -305,7 +305,7 @@
       <label style="font-size: 13px; font-weight: 500;">首次还款日期<br><input type="date" id="firstPayDate" value="2022-12-26" style="width: 100%; padding: 8px; font-size: 14px; font-weight: 600;" /></label>
       <label style="font-size: 13px; font-weight: 500;">还款方式<br>
         <select id="repayType" style="width:100%; padding: 8px; font-size: 14px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border);">
-          <!-- <option value="annuity" selected>等额本息</option> -->
+          <option value="annuity" selected>等额本息</option>
           <option value="equalPrincipal">等额本金</option>
         </select>
       </label>
@@ -455,42 +455,73 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
-    function loadState() {
+    async function loadFromHistoryJson() {
       try {
+        const response = await fetch('history.json');
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.warn('加载 history.json 失败', err);
+        return null;
+      }
+    }
+
+    function applyStateData(s) {
+      if (!s) return false;
+
+      if (s.principal) document.getElementById('principal').value = s.principal;
+      if (s.annualRate) document.getElementById('annualRate').value = s.annualRate;
+      if (s.months) document.getElementById('months').value = s.months;
+      if (s.repayType) {
+        const select = document.getElementById('repayType');
+        if (select) select.value = s.repayType;
+      }
+      if (s.prepayMode) {
+        const select = document.getElementById('prepayMode');
+        // 历史数据若为"保持月供，缩短期数"，统一回退为"保持期数，降低月供"
+        const normalizedMode = s.prepayMode === 'reduceTerm' ? 'reducePayment' : s.prepayMode;
+        if (select) select.value = normalizedMode;
+      }
+      if (Array.isArray(s.rateChanges)) {
+        rateChanges.splice(0, rateChanges.length, ...s.rateChanges);
+      }
+      if (Array.isArray(s.prepays)) {
+        prepays.splice(0, prepays.length, ...s.prepays);
+      }
+      if (s.rateChangeForm) {
+        if (s.rateChangeForm.rate) document.getElementById('rateChangeValue').value = s.rateChangeForm.rate;
+        if (s.rateChangeForm.date) document.getElementById('rateChangeDate').value = s.rateChangeForm.date;
+      }
+      if (s.prepayForm) {
+        if (s.prepayForm.amount) document.getElementById('prepayAmount').value = s.prepayForm.amount;
+        if (s.prepayForm.date) document.getElementById('prepayDate').value = s.prepayForm.date;
+      }
+      if (s.firstPayDate) {
+        document.getElementById('firstPayDate').value = s.firstPayDate;
+      }
+
+      return true;
+    }
+
+    async function loadState() {
+      try {
+        // 优先级1：localStorage
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const s = JSON.parse(raw);
-        if (s.principal) document.getElementById('principal').value = s.principal;
-        if (s.annualRate) document.getElementById('annualRate').value = s.annualRate;
-        if (s.months) document.getElementById('months').value = s.months;
-        if (s.repayType) {
-          const select = document.getElementById('repayType');
-          if (select) select.value = s.repayType;
+        if (raw) {
+          const s = JSON.parse(raw);
+          applyStateData(s);
+          renderChips();
+          return;
         }
-        if (s.prepayMode) {
-          const select = document.getElementById('prepayMode');
-          // 历史数据若为“保持月供，缩短期数”，统一回退为“保持期数，降低月供”
-          const normalizedMode = s.prepayMode === 'reduceTerm' ? 'reducePayment' : s.prepayMode;
-          if (select) select.value = normalizedMode;
+
+        // 优先级2：history.json
+        const historyData = await loadFromHistoryJson();
+        if (historyData) {
+          applyStateData(historyData);
+          renderChips();
+          return;
         }
-        if (Array.isArray(s.rateChanges)) {
-          rateChanges.splice(0, rateChanges.length, ...s.rateChanges);
-        }
-        if (Array.isArray(s.prepays)) {
-          prepays.splice(0, prepays.length, ...s.prepays);
-        }
-        if (s.rateChangeForm) {
-          if (s.rateChangeForm.rate) document.getElementById('rateChangeValue').value = s.rateChangeForm.rate;
-          if (s.rateChangeForm.date) document.getElementById('rateChangeDate').value = s.rateChangeForm.date;
-        }
-        if (s.prepayForm) {
-          if (s.prepayForm.amount) document.getElementById('prepayAmount').value = s.prepayForm.amount;
-          if (s.prepayForm.date) document.getElementById('prepayDate').value = s.prepayForm.date;
-        }
-        if (s.firstPayDate) {
-          document.getElementById('firstPayDate').value = s.firstPayDate;
-        }
-        renderChips();
       } catch (err) {
         console.warn('加载本地记录失败', err);
       }
