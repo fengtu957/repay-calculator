@@ -3,6 +3,7 @@ FROM nginx:alpine
 
 # Copy the static entrypoint
 COPY index.html /usr/share/nginx/html/index.html
+COPY history.json /usr/share/nginx/html/history.json
 
 # Expose default http port
 EXPOSE 80
